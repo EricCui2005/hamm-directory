@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 import { Alumni } from '@/lib/types';
+import dynamic from 'next/dynamic';
 
-// Dynamically import Globe with no SSR (Three.js needs browser)
-const Globe = dynamic(() => import('react-globe.gl'), { ssr: false });
+// Dynamically import map component (Leaflet needs browser/window)
+const AlumniMap = dynamic(() => import('@/components/AlumniMap'), { ssr: false });
 
-interface GlobePoint {
+interface MapPoint {
   lat: number;
   lng: number;
   color: string;
@@ -17,20 +17,13 @@ interface GlobePoint {
 }
 
 const POINT_COLORS = [
-  '#f59e0b', // amber
-  '#ef4444', // red
-  '#10b981', // emerald
-  '#3b82f6', // blue
-  '#8b5cf6', // violet
-  '#ec4899', // pink
+  '#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899',
 ];
 
-export default function GlobePage() {
-  const [points, setPoints] = useState<GlobePoint[]>([]);
+export default function MapPage() {
+  const [points, setPoints] = useState<MapPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPoint, setSelectedPoint] = useState<GlobePoint | null>(null);
-  const [altitude, setAltitude] = useState(2.5);
-  const globeEl = useRef<HTMLDivElement>(null);
+  const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null);
 
   useEffect(() => {
     fetchAlumniWithLocations();
@@ -47,124 +40,56 @@ export default function GlobePage() {
     if (error) {
       console.error('Error fetching alumni:', error);
     } else if (data) {
-      const globePoints: GlobePoint[] = data.map((a: Alumni, index: number) => ({
+      const mapPoints: MapPoint[] = data.map((a: Alumni, index: number) => ({
         lat: a.latitude!,
         lng: a.longitude!,
         color: POINT_COLORS[index % POINT_COLORS.length],
         alumni: a,
       }));
-      setPoints(globePoints);
+      setPoints(mapPoints);
     }
     setLoading(false);
   };
 
-  // Calculate point radius based on altitude (zoom level)
-  // Higher altitude = zoomed out = larger points
-  // Lower altitude = zoomed in = smaller points
-  const getPointRadius = useCallback((altitude: number) => {
-    // altitude typically ranges from 0.1 (very close) to 4+ (far away)
-    // We want radius to scale: close = small, far = larger
-    const minRadius = 0.15;
-    const maxRadius = 0.6;
-    const minAlt = 0.3;
-    const maxAlt = 4;
-
-    const clampedAlt = Math.max(minAlt, Math.min(maxAlt, altitude));
-    const ratio = (clampedAlt - minAlt) / (maxAlt - minAlt);
-    return minRadius + ratio * (maxRadius - minRadius);
-  }, []);
-
-  // Handle zoom changes
-  const handleZoom = useCallback((pov: { lat: number; lng: number; altitude: number }) => {
-    setAltitude(pov.altitude);
-  }, []);
-
   return (
-    <main className="min-h-screen bg-[#0a0a1a] relative overflow-hidden">
-      {/* Ambient glow effect */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at center, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
-        }}
-      />
-
-      <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
-        <h1 className="font-handwritten text-4xl font-bold text-amber-400 drop-shadow-lg">
+    <main className="min-h-screen bg-[#f5f0e8] relative">
+      <div className="absolute top-0 left-0 right-0 z-[1000] p-4 flex justify-between items-center bg-white/80 backdrop-blur-sm shadow-sm">
+        <h1 className="font-handwritten text-3xl font-bold text-amber-800">
           Hamm Around the World
         </h1>
         <div className="flex gap-4">
-          <Link
-            href="/"
-            className="text-amber-400 hover:text-amber-300 underline transition-colors"
-          >
+          <Link href="/" className="text-amber-600 hover:text-amber-800 underline transition-colors">
             Directory
           </Link>
-          <Link
-            href="/wall"
-            className="text-amber-400 hover:text-amber-300 underline transition-colors"
-          >
+          <Link href="/wall" className="text-amber-600 hover:text-amber-800 underline transition-colors">
             Wall
           </Link>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-screen text-gray-400">
+        <div className="flex items-center justify-center h-screen text-gray-500">
           <div className="text-center">
-            <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p>Loading globe...</p>
+            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p>Loading map...</p>
           </div>
         </div>
       ) : points.length === 0 ? (
-        <div className="flex items-center justify-center h-screen text-gray-400">
+        <div className="flex items-center justify-center h-screen text-gray-500">
           <div className="text-center">
             <p className="mb-2">No alumni with locations yet.</p>
-            <p className="text-sm">Add locations from the directory to see them on the globe!</p>
+            <p className="text-sm">Add locations from the directory to see them on the map!</p>
           </div>
         </div>
       ) : (
-        <div className="w-full h-screen" ref={globeEl}>
-          <Globe
-            globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
-            bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
-            backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
-            showAtmosphere={true}
-            atmosphereColor="#3b82f6"
-            atmosphereAltitude={0.25}
-            pointsData={points}
-            pointLat="lat"
-            pointLng="lng"
-            pointColor="color"
-            pointAltitude={0.01}
-            pointRadius={getPointRadius(altitude)}
-            pointLabel={(d: object) => {
-              const point = d as GlobePoint;
-              return `
-                <div style="
-                  background: rgba(31, 41, 55, 0.95);
-                  color: white;
-                  padding: 8px 12px;
-                  border-radius: 8px;
-                  font-family: system-ui, sans-serif;
-                  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                  border: 1px solid rgba(255,255,255,0.1);
-                ">
-                  <div style="font-weight: 600; font-size: 14px;">${point.alumni.name}</div>
-                  <div style="font-size: 12px; color: #9ca3af; margin-top: 2px;">${point.alumni.location || 'Unknown'}</div>
-                </div>
-              `;
-            }}
-            onPointClick={(point: object) => setSelectedPoint(point as GlobePoint)}
-            onZoom={handleZoom}
-            enablePointerInteraction={true}
-          />
+        <div className="w-full h-screen pt-14">
+          <AlumniMap points={points} onPointClick={setSelectedPoint} />
         </div>
       )}
 
       {/* Alumni Card Popup */}
       {selectedPoint && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 animate-fade-in">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000] animate-fade-in">
           <div
             className="relative p-5 rounded-sm shadow-2xl paper-texture w-72"
             style={{
@@ -173,7 +98,7 @@ export default function GlobePage() {
           >
             {/* Tape decoration */}
             <div
-              className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 rounded-sm shadow-sm"
+              className="absolute -top-3 left-1/2 w-16 h-6 rounded-sm shadow-sm"
               style={{
                 background: 'linear-gradient(135deg, #d4a574 0%, #c9956c 50%, #d4a574 100%)',
                 transform: 'translateX(-50%) rotate(-2deg)',
@@ -243,11 +168,10 @@ export default function GlobePage() {
       )}
 
       {/* Alumni count badge */}
-      <div className="absolute bottom-4 right-4 bg-gray-800/80 backdrop-blur-sm text-amber-400 text-sm px-3 py-1.5 rounded-full z-10">
+      <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm text-amber-700 text-sm px-3 py-1.5 rounded-full z-[1000] shadow-sm">
         {points.length} alumni worldwide
       </div>
 
-      {/* Animation styles */}
       <style jsx global>{`
         @keyframes fade-in {
           from { opacity: 0; transform: translate(-50%, 10px); }
