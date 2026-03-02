@@ -102,7 +102,13 @@ export default function WallPage() {
             href="/"
             className="text-amber-600 hover:text-amber-800 underline"
           >
-            View Directory
+            Directory
+          </Link>
+          <Link
+            href="/globe"
+            className="text-amber-600 hover:text-amber-800 underline"
+          >
+            Globe
           </Link>
         </div>
       </div>

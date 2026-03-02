@@ -83,12 +83,20 @@ export default function Home() {
         <h1 className="font-handwritten text-4xl font-bold text-amber-800">
           Hammarskjold Alumni
         </h1>
-        <Link
-          href="/wall"
-          className="text-amber-600 hover:text-amber-800 underline"
-        >
-          View Wall
-        </Link>
+        <div className="flex gap-4">
+          <Link
+            href="/wall"
+            className="text-amber-600 hover:text-amber-800 underline"
+          >
+            Wall
+          </Link>
+          <Link
+            href="/globe"
+            className="text-amber-600 hover:text-amber-800 underline"
+          >
+            Globe
+          </Link>
+        </div>
       </div>
 
       <div className="mb-6 flex gap-4">
@@ -146,6 +154,9 @@ export default function Home() {
                     : `${a.year_start} - ${a.year_end}`}
                 </p>
                 <p className="text-gray-500 text-sm">{a.email}</p>
+                {a.location && (
+                  <p className="text-gray-500 text-sm">{a.location}</p>
+                )}
                 {a.linkedin_url && (
                   <a
                     href={a.linkedin_url}

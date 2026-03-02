@@ -5,6 +5,9 @@ export interface Alumni {
   linkedin_url: string | null;
   year_start: number;
   year_end: number;
+  location: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
 }
 
