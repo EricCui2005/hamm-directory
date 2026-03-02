@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Alumni } from '@/lib/types';
 import AlumniCard from '@/components/AlumniCard';
 
-const CARDS_TO_SHOW = 12;
 const colorSchemes: Array<'blue' | 'pink' | 'cream' | 'mint'> = ['blue', 'pink', 'cream', 'mint'];
 
 interface CardPosition {
@@ -15,15 +15,6 @@ interface CardPosition {
   y: number;
   rotation: number;
   colorScheme: 'blue' | 'pink' | 'cream' | 'mint';
-}
-
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
 }
 
 function generatePositions(alumni: Alumni[]): CardPosition[] {
@@ -35,19 +26,17 @@ function generatePositions(alumni: Alumni[]): CardPosition[] {
     const col = index % cols;
     const row = Math.floor(index / cols);
 
-    // Base position in a grid
     const baseX = (col / cols) * 100;
-    const baseY = (row / rows) * 100;
+    const baseY = (row / (rows || 1)) * 100;
 
-    // Add some randomness
     const randomOffsetX = (Math.random() - 0.5) * 10;
     const randomOffsetY = (Math.random() - 0.5) * 10;
 
     positions.push({
       alumni: a,
       x: Math.max(5, Math.min(75, baseX + randomOffsetX)),
-      y: Math.max(5, Math.min(85, baseY + randomOffsetY)),
-      rotation: (Math.random() - 0.5) * 24, // -12 to 12 degrees
+      y: Math.max(2, Math.min(85, baseY + randomOffsetY)),
+      rotation: (Math.random() - 0.5) * 24,
       colorScheme: colorSchemes[index % colorSchemes.length],
     });
   });
@@ -55,15 +44,25 @@ function generatePositions(alumni: Alumni[]): CardPosition[] {
   return positions;
 }
 
-export default function WallPage() {
+export default function YearbookYearPage() {
+  const params = useParams();
+  const year = Number(params.year);
   const [cardPositions, setCardPositions] = useState<CardPosition[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchAndPositionAlumni = async () => {
+  useEffect(() => {
+    fetchAlumniForYear();
+  }, [year]);
+
+  const fetchAlumniForYear = async () => {
     setLoading(true);
+    // Get alumni where year_start <= year AND year_end >= year
     const { data, error } = await supabase
       .from('alumni')
-      .select('*');
+      .select('*')
+      .lte('year_start', year)
+      .gte('year_end', year)
+      .order('name');
 
     if (error) {
       console.error('Error fetching alumni:', error);
@@ -72,48 +71,40 @@ export default function WallPage() {
     }
 
     if (data) {
-      // Shuffle and take random subset
-      const shuffled = shuffleArray(data);
-      const subset = shuffled.slice(0, CARDS_TO_SHOW);
-      const positions = generatePositions(subset);
-      setCardPositions(positions);
+      setCardPositions(generatePositions(data));
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchAndPositionAlumni();
-  }, []);
+  // Calculate height based on number of rows
+  const rows = Math.ceil(cardPositions.length / 4);
+  const containerHeight = Math.max(500, rows * 280);
 
   return (
     <main className="min-h-screen p-8 relative overflow-hidden">
       <div className="flex justify-between items-center mb-8 relative z-10">
-        <h1 className="font-handwritten text-4xl font-bold text-amber-800">
-          Hamm Wall
-        </h1>
-        <div className="flex gap-4">
-          <button
-            onClick={fetchAndPositionAlumni}
-            className="text-amber-600 hover:text-amber-800 underline"
-          >
-            Shuffle
-          </button>
-          <Link
-            href="/"
-            className="text-amber-600 hover:text-amber-800 underline"
-          >
-            Directory
-          </Link>
+        <div>
           <Link
             href="/yearbook"
-            className="text-amber-600 hover:text-amber-800 underline"
+            className="text-amber-600 hover:text-amber-800 text-sm underline"
           >
-            Yearbook
+            ← All Years
           </Link>
-          <Link
-            href="/globe"
-            className="text-amber-600 hover:text-amber-800 underline"
-          >
+          <h1 className="font-handwritten text-4xl font-bold text-amber-800 mt-1">
+            Hamm {year}
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {cardPositions.length} resident{cardPositions.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <div className="flex gap-4">
+          <Link href="/" className="text-amber-600 hover:text-amber-800 underline">
+            Directory
+          </Link>
+          <Link href="/wall" className="text-amber-600 hover:text-amber-800 underline">
+            Wall
+          </Link>
+          <Link href="/globe" className="text-amber-600 hover:text-amber-800 underline">
             Map
           </Link>
         </div>
@@ -123,14 +114,14 @@ export default function WallPage() {
         <div className="text-center py-24 text-gray-500">Loading...</div>
       ) : cardPositions.length === 0 ? (
         <div className="text-center py-24 text-gray-500">
-          No alumni to display. Add some from the directory!
+          No one was in the house in {year}.
         </div>
       ) : (
-        <div className="relative w-full" style={{ height: 'calc(100vh - 150px)' }}>
+        <div className="relative w-full" style={{ height: containerHeight }}>
           {cardPositions.map((pos, index) => (
             <div
               key={pos.alumni.id}
-              className="absolute transition-all duration-300"
+              className="absolute"
               style={{
                 left: `${pos.x}%`,
                 top: `${pos.y}%`,

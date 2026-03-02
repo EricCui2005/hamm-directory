@@ -91,10 +91,16 @@ export default function Home() {
             Wall
           </Link>
           <Link
+            href="/yearbook"
+            className="text-amber-600 hover:text-amber-800 underline"
+          >
+            Yearbook
+          </Link>
+          <Link
             href="/globe"
             className="text-amber-600 hover:text-amber-800 underline"
           >
-            Globe
+            Map
           </Link>
         </div>
       </div>

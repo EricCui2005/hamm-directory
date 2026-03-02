@@ -64,6 +64,9 @@ export default function MapPage() {
           <Link href="/wall" className="text-amber-600 hover:text-amber-800 underline transition-colors">
             Wall
           </Link>
+          <Link href="/yearbook" className="text-amber-600 hover:text-amber-800 underline transition-colors">
+            Yearbook
+          </Link>
         </div>
       </div>
 
