@@ -12,9 +12,8 @@ const Globe = dynamic(() => import('react-globe.gl'), { ssr: false });
 interface GlobePoint {
   lat: number;
   lng: number;
-  name: string;
-  location: string;
   color: string;
+  alumni: Alumni;
 }
 
 const POINT_COLORS = [
@@ -49,9 +48,8 @@ export default function GlobePage() {
       const globePoints: GlobePoint[] = data.map((a: Alumni, index: number) => ({
         lat: a.latitude!,
         lng: a.longitude!,
-        name: a.name,
-        location: a.location || 'Unknown',
         color: POINT_COLORS[index % POINT_COLORS.length],
+        alumni: a,
       }));
       setPoints(globePoints);
     }
@@ -105,8 +103,8 @@ export default function GlobePage() {
             pointLabel={(d: unknown) => {
               const point = d as GlobePoint;
               return `<div class="bg-gray-800 text-white px-3 py-2 rounded-lg shadow-lg">
-                <div class="font-bold">${point.name}</div>
-                <div class="text-sm text-gray-300">${point.location}</div>
+                <div class="font-bold">${point.alumni.name}</div>
+                <div class="text-sm text-gray-300">${point.alumni.location || 'Unknown'}</div>
               </div>`;
             }}
             onPointClick={(point: unknown) => setSelectedPoint(point as GlobePoint)}
@@ -115,16 +113,83 @@ export default function GlobePage() {
         </div>
       )}
 
+      {/* Alumni Card Popup */}
       {selectedPoint && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-xl p-4 z-20">
-          <button
-            onClick={() => setSelectedPoint(null)}
-            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
+          <div
+            className="relative p-5 rounded-sm shadow-2xl paper-texture w-72"
+            style={{
+              background: 'linear-gradient(135deg, #a8c8dc 0%, #93b8d0 100%)',
+            }}
           >
-            ×
-          </button>
-          <h3 className="font-semibold text-lg">{selectedPoint.name}</h3>
-          <p className="text-gray-600">{selectedPoint.location}</p>
+            {/* Tape decoration */}
+            <div
+              className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 rounded-sm shadow-sm"
+              style={{
+                background: 'linear-gradient(135deg, #d4a574 0%, #c9956c 50%, #d4a574 100%)',
+                transform: 'translateX(-50%) rotate(-2deg)',
+              }}
+            />
+
+            {/* Close button */}
+            <button
+              onClick={() => setSelectedPoint(null)}
+              className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-800 bg-white/50 rounded-full"
+            >
+              ×
+            </button>
+
+            {/* Card content */}
+            <div className="mt-2 space-y-2">
+              <h3 className="font-handwritten text-2xl text-gray-800 font-bold">
+                {selectedPoint.alumni.name}
+              </h3>
+
+              <p className="font-handwritten text-lg text-gray-700">
+                {selectedPoint.alumni.year_start === selectedPoint.alumni.year_end
+                  ? selectedPoint.alumni.year_start
+                  : `${selectedPoint.alumni.year_start} - ${selectedPoint.alumni.year_end}`}
+              </p>
+
+              <div className="text-sm text-gray-600 space-y-1">
+                <p className="flex items-center gap-2">
+                  <span>📍</span>
+                  <span>{selectedPoint.alumni.location}</span>
+                </p>
+
+                <p className="flex items-center gap-2">
+                  <span>✉️</span>
+                  <a
+                    href={`mailto:${selectedPoint.alumni.email}`}
+                    className="hover:underline truncate"
+                  >
+                    {selectedPoint.alumni.email}
+                  </a>
+                </p>
+
+                {selectedPoint.alumni.linkedin_url && (
+                  <p className="flex items-center gap-2">
+                    <span>💼</span>
+                    <a
+                      href={selectedPoint.alumni.linkedin_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-700 hover:underline"
+                    >
+                      LinkedIn Profile
+                    </a>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Paper holes decoration */}
+            <div className="absolute right-3 top-10 flex flex-col gap-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="w-2 h-2 rounded-full bg-white/60" />
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
