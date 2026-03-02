@@ -140,9 +140,6 @@ export default function GlobePage() {
             pointRadius={getPointRadius(altitude)}
             pointLabel={(d: object) => {
               const point = d as GlobePoint;
-              const photoHtml = point.alumni.photo_url
-                ? `<img src="${point.alumni.photo_url}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.3);flex-shrink:0;" />`
-                : `<div style="width:36px;height:36px;border-radius:50%;background:${point.color};display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;flex-shrink:0;">${point.alumni.name.charAt(0)}</div>`;
               return `
                 <div style="
                   background: rgba(31, 41, 55, 0.95);
@@ -152,15 +149,9 @@ export default function GlobePage() {
                   font-family: system-ui, sans-serif;
                   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                   border: 1px solid rgba(255,255,255,0.1);
-                  display: flex;
-                  align-items: center;
-                  gap: 10px;
                 ">
-                  ${photoHtml}
-                  <div>
-                    <div style="font-weight: 600; font-size: 14px;">${point.alumni.name}</div>
-                    <div style="font-size: 12px; color: #9ca3af; margin-top: 2px;">${point.alumni.location || 'Unknown'}</div>
-                  </div>
+                  <div style="font-weight: 600; font-size: 14px;">${point.alumni.name}</div>
+                  <div style="font-size: 12px; color: #9ca3af; margin-top: 2px;">${point.alumni.location || 'Unknown'}</div>
                 </div>
               `;
             }}
@@ -199,26 +190,9 @@ export default function GlobePage() {
 
             {/* Card content */}
             <div className="mt-2 space-y-2">
-              {/* Profile photo */}
-              <div className="flex items-center gap-3">
-                {selectedPoint.alumni.photo_url ? (
-                  <img
-                    src={selectedPoint.alumni.photo_url}
-                    alt={selectedPoint.alumni.name}
-                    className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md"
-                  />
-                ) : (
-                  <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md"
-                    style={{ background: selectedPoint.color }}
-                  >
-                    {selectedPoint.alumni.name.charAt(0)}
-                  </div>
-                )}
-                <h3 className="font-handwritten text-2xl text-gray-800 font-bold">
-                  {selectedPoint.alumni.name}
-                </h3>
-              </div>
+              <h3 className="font-handwritten text-2xl text-gray-800 font-bold">
+                {selectedPoint.alumni.name}
+              </h3>
 
               <p className="font-handwritten text-lg text-gray-700">
                 {selectedPoint.alumni.year_start === selectedPoint.alumni.year_end

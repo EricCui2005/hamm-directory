@@ -8,7 +8,6 @@ export interface Alumni {
   location: string | null;
   latitude: number | null;
   longitude: number | null;
-  photo_url: string | null;
   created_at: string;
 }
 
